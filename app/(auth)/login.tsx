@@ -1,11 +1,14 @@
+import { supabase } from '@/lib/supabase';
 import { FontAwesome } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Image } from "expo-image";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { Eye, EyeClosed, Github } from 'lucide-react-native';
 import { useState } from 'react';
 import {
   Dimensions,
+  Keyboard,
   StatusBar,
   StyleSheet,
   Text,
@@ -15,6 +18,8 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import PublicRoute from '../routes/publicroute';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,14 +29,40 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
+
+    Keyboard.dismiss(); 
+    
+    if (!email || !password) {
+      Toast.show({
+        type: 'error',
+        text1: 'Please fill out both fields.',
+        position: 'top',
+      });
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      router.replace('../(dashboard)');
-    }, 1500);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setIsLoading(false); 
+    
+    if (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Login failed.',
+        text2: 'Invalid Credentials.',
+        position: 'top', 
+      });
+    } else {
+      router.replace('/(dashboard)');
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -39,13 +70,33 @@ export default function Login() {
     console.log('Google login');
   };
 
-  const handleAppleLogin = () => {
+  
+  const handleAppleLogin = async () => {
     // Apple login logic
-    console.log('Apple login');
+    // console.log('Apple login');
+    console.log("dsjfhjs")
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: "http://localhost:8081/callback",
+      },
+
+    });
+
+    if (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'GitHub login failed',
+        text2: error.message,
+      });
+    }
+   
   };
 
   return (
     <>
+    <PublicRoute>
       <StatusBar barStyle="light-content" backgroundColor="#0a0a0f" />
       <SafeAreaView style={styles.safe}>
         <LinearGradient
@@ -88,6 +139,7 @@ export default function Login() {
                           onChangeText={setEmail}
                           // onFocus={() => setFocusedInput('email')}
                           onBlur={() => setFocusedInput(null)}
+                          onSubmitEditing={handleLogin}
                         />
                       </View>
                     </View>
@@ -100,16 +152,24 @@ export default function Login() {
                       ]}>
                         <FontAwesome name="lock" size={16} color="#667eea" style={styles.inputIcon} />
                         <TextInput
-                          style={styles.input}
+                          style={[styles.input, { flex: 1 }]}
                           placeholder="Enter your password"
                           placeholderTextColor="#6b7280"
-                          secureTextEntry
+                          secureTextEntry= {!showPassword}
                           autoCapitalize="none"
                           value={password}
                           onChangeText={setPassword}
                           // onFocus={() => setFocusedInput('password')}
                           onBlur={() => setFocusedInput(null)}
+                          onSubmitEditing={handleLogin}
                         />
+                        <TouchableOpacity onPress={() => setShowPassword(prev => !prev)}>
+                          {showPassword ? (
+                            <Eye size={20} color="#667eea" />
+                          ) : (
+                            <EyeClosed size={20} color="#667eea" />
+                          )}
+                        </TouchableOpacity>
                       </View>
                     </View>
 
@@ -161,16 +221,18 @@ export default function Login() {
                           colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
                           style={styles.socialGradient}
                         >
-                          <FontAwesome name="apple" size={20} color="#fff" />
-                          <Text style={styles.socialText}>Apple</Text>
+                          {/* <FontAwesome name="apple" size={20} color="#fff" />
+                          <Text style={styles.socialText}>Apple</Text> */}
+                          <Github size={20} color="#fff"/>
+                          <Text style={styles.socialText}>Github</Text>
                         </LinearGradient>
                       </TouchableOpacity>
+                      
                     </View>
                   </View>
                 </LinearGradient>
               </BlurView>
             </View>
-
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/signup')}>
@@ -180,6 +242,7 @@ export default function Login() {
           </KeyboardAwareScrollView>
         </LinearGradient>
       </SafeAreaView>
+    </PublicRoute>
     </>
   );
 }
@@ -275,6 +338,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 14,
     fontWeight: '500',
+    marginLeft: 8,
+    marginRight: 8,
   },
   forgotPassword: {
     alignSelf: 'flex-end',

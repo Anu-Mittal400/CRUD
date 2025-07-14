@@ -11,14 +11,14 @@ export default function AuthLayout() {
       <Stack.Screen
         name="login"
         options={{
-          animation: 'slide_from_left', // 👈 login slides in from left
+          animation: 'slide_from_left',
           
         }}
       />
       <Stack.Screen
         name="signup"
         options={{
-          animation: 'slide_from_right', // 👈 signup slides in from right
+          animation: 'slide_from_right', 
         }}
       />
     </Stack>

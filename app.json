@@ -45,15 +45,15 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "router": {},
-      "eas": {
-      }
+      "eas": {}
     },
     "ios": {
       "infoPlist": {

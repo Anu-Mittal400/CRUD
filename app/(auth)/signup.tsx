@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 import { FontAwesome } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Image } from "expo-image";
@@ -6,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Dimensions,
+  Keyboard,
   StatusBar,
   StyleSheet,
   Text,
@@ -15,6 +17,8 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import PublicRoute from '../routes/publicroute';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,12 +31,54 @@ export default function Signup() {
   const [focusedInput, setFocusedInput] = useState(null);
 
   const handleSignup = async () => {
+    Keyboard.dismiss(); 
+    
+
+    if (!email || !password || !name) {
+      Toast.show({
+        type: 'error',
+        text1: 'Please fill out all fields.',
+        position: 'top',
+      });
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      router.replace('../(dashboard)');
-    }, 1500);
+
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name, 
+        }
+      }
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Signup failed.',
+        text2: 'Invalid Credentials',
+        position: 'top', 
+      });
+    } 
+    else if (session) {
+      router.replace('../(dashboard)'); 
+    }
+    else {
+      Toast.show({
+        type: 'success',
+        text1: 'Signup successful!, Check your email to confirm.',
+        position: 'top', 
+      });
+      router.replace('/login');
+    }
   };
 
   const handleGoogleSignup = () => {
@@ -47,6 +93,7 @@ export default function Signup() {
 
   return (
     <>
+    <PublicRoute>
       <StatusBar barStyle="light-content" backgroundColor="#0a0a0f" />
       <SafeAreaView style={styles.safe}>
         <LinearGradient
@@ -205,6 +252,7 @@ export default function Signup() {
           </KeyboardAwareScrollView>
         </LinearGradient>
       </SafeAreaView>
+      </PublicRoute>
     </>
   );
 }

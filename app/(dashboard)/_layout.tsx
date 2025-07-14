@@ -4,12 +4,13 @@ export default function DashboardLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false, // applies to all
+        headerShown: false,
         navigationBarColor : "#fff",
       }}
     >
-      <Stack.Screen name="(dashboard)/index" />
+      <Stack.Screen name="index" />
     </Stack>
+    
    
   );
 }
