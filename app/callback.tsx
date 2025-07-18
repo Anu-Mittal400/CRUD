@@ -1,59 +1,83 @@
+import { useLoader } from '@/components/loader';
 import { supabase } from '@/lib/supabase';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
 import Toast from 'react-native-toast-message';
 
-async function createSessionFromUrl(url: string) {
-  // Convert hash fragment to query-like format for parsing
-  const accessibleUrl = url.replace('#', '?');
-  const parsed = Linking.parse(accessibleUrl);
-  const params = parsed.queryParams ?? {};
 
-  const access_token = params.access_token as string | undefined;
-  const refresh_token = params.refresh_token as string | undefined;
-  if (!access_token || !refresh_token) return null;
-  const { data, error } = await supabase.auth.setSession({
-    access_token,
-    refresh_token,
-  });
-  if (error) throw error;
-
-  return data.session;
-}
+WebBrowser.maybeCompleteAuthSession(); // Required for Android
 
 export default function Callback() {
+  const { showLoader, hideLoader } = useLoader();
+
   const router = useRouter();
-  console.log("===hiiihlooo===")
 
   useEffect(() => {
-    const handleOAuthRedirect = async () => {
-      const url = await Linking.getInitialURL();
-      console.log("hiiiiiii")
-      if (!url) {
-        Toast.show({ type: 'error', text1: 'Login Failed', text2: 'No URL detected' });
-        router.replace('/login');
-        return;
-      }
-
+    const handleAuthRedirect = async () => {
       try {
-        const session = await createSessionFromUrl(url);
-        if (!session) {
-          Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Missing tokens' });
-          router.replace('/login');
-          return;
-        }
+        showLoader();
+
+        const url = await Linking.getInitialURL();
+        console.log("===url===",url)
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+        console.log("===session==",session)
+        
+        
+        // if (!url) {
+        //   Toast.show({ type: 'error', text1: 'Login Failed', text2: 'No redirect URL' });
+        //   router.replace('/login');
+        //   return;
+        // }
+
+        // GitHub returns #code=... → convert hash to query string
+        // const parsedUrl = url.replace('#', '?');
+        // const parsed = Linking.parse(parsedUrl);
+        // const code = parsed.queryParams?.code as string;
+
+        // if (!code) {
+
+        //   Toast.show({ type: 'error', text1: 'Login Failed', text2: 'No authorization code' });
+        //   router.replace('/login');
+        //   return;
+        // }
+        // 🔁 Here's where you use it
+        // const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+        // if (error) {
+        //   console.error('❌ exchangeCodeForSession error:', error.message);
+        //   Toast.show({ type: 'error', text1: 'Session Error', text2: error.message });
+        //   router.replace('/login');
+        //   return;
+        // }
+
+        // console.log("55555555555")
+        Toast.show({ type: 'success', text1: 'Login Successful' });
+
         router.replace('/(dashboard)');
+        hideLoader();
+
+
       } catch (err: any) {
-        Toast.show({ type: 'error', text1: 'Session Error', text2: err.message });
+        console.error('❌ Unexpected error:', err.message);
+        Toast.show({ type: 'error', text1: 'Error', text2: err.message });
         router.replace('/login');
       }
     };
 
-    handleOAuthRedirect();
-  }, [router]);
+    handleAuthRedirect();
+  }, []);
 
-  return null;
+  return (
+    null
+    // <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    //   <ActivityIndicator size="large" />
+    //   <Text>Authenticating...</Text>
+    // </View>
+  );
 }
-
 

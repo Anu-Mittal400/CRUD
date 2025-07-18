@@ -1,9 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { FontAwesome } from '@expo/vector-icons';
+import { makeRedirectUri } from 'expo-auth-session';
 import { BlurView } from 'expo-blur';
 import { Image } from "expo-image";
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Linking from "expo-linking";
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Eye, EyeClosed, Github } from 'lucide-react-native';
 import { useState } from 'react';
 import {
@@ -20,7 +23,6 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import PublicRoute from '../routes/publicroute';
-
 const { width, height } = Dimensions.get('window');
 
 export default function Login() {
@@ -30,6 +32,11 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const redirectTo = makeRedirectUri({  
+      scheme: 'crud',
+      path: 'callback', 
+      preferLocalhost: false,
+  })
 
   const handleLogin = async () => {
 
@@ -70,29 +77,68 @@ export default function Login() {
     console.log('Google login');
   };
 
-  
-  const handleAppleLogin = async () => {
-    // Apple login logic
-    // console.log('Apple login');
-    console.log("dsjfhjs")
+  const handleGithubLogin = async () => {
+  const redirectTo = makeRedirectUri({
+    scheme: 'crud',
+    path: 'callback',
+  });
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
+  try {
+    // Step 1: Start Supabase GitHub OAuth
+    const { data, error: signInError } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: "http://localhost:8081/callback",
+        redirectTo,
+        skipBrowserRedirect: false,
+        queryParams: {
+          prompt: 'consent', // 👈 force GitHub to show auth screen again
+        },
       },
-
     });
 
-    if (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'GitHub login failed',
-        text2: error.message,
-      });
+    if (signInError || !data?.url) {
+      console.error("❌ Supabase OAuth error:", signInError?.message);
+      Toast.show({ type: 'error', text1: 'OAuth Error', text2: signInError?.message || 'Unknown error' });
+      return;
     }
-   
-  };
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    console.log("🌐 WebBrowser result:", result);
+
+    if (result.type === 'cancel' || result.type === 'dismiss') {
+      return;
+    }
+
+    if (result.type !== 'success' || !result.url) {
+      Toast.show({ type: 'error', text1: 'Login Failed', text2: 'No valid redirect URL returned' });
+      return;
+    }
+
+    const redirectedUrl = result.url.replace('#', '?');
+    const { queryParams } = Linking.parse(redirectedUrl);
+
+    const access_token = queryParams?.access_token as string | undefined;
+    const refresh_token = queryParams?.refresh_token as string | undefined;
+
+    if (!access_token || !refresh_token) {
+      Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Tokens missing in redirect URL' });
+      return;
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token,
+    });
+
+    if (sessionError) {
+      Toast.show({ type: 'error', text1: 'Session Error', text2: sessionError.message });
+      return;
+    }
+  } catch (err: any) {
+    console.error("Unexpected error during GitHub login:", err.message);
+    Toast.show({ type: 'error', text1: 'Error', text2: err.message });
+  }
+};
 
   return (
     <>
@@ -216,7 +262,7 @@ export default function Login() {
                         </LinearGradient>
                       </TouchableOpacity>
 
-                      <TouchableOpacity style={styles.socialBtn} onPress={handleAppleLogin}>
+                      <TouchableOpacity style={styles.socialBtn} onPress={handleGithubLogin}>
                         <LinearGradient
                           colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
                           style={styles.socialGradient}

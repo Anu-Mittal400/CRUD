@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/authcontext';
+import { LoaderProvider } from '@/components/loader';
 import { ToastProvider } from '@/components/Toast';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -23,16 +24,15 @@ export default function RootLayout() {
 
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-
+        <LoaderProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(dashboard)" />
           <Stack.Screen name="callback"/>
         </Stack>
-        
-
         <StatusBar style="auto" />
+        </LoaderProvider>
       </AuthProvider>
       <ToastProvider />
 

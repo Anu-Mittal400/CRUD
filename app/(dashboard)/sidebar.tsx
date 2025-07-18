@@ -57,9 +57,7 @@ export default function Sidebar({
 
   return (
     <>
-      <Pressable onPress={onClose}>
-        <View style={styles.overlay} />
-      </Pressable>
+      <Pressable onPress={onClose} style={styles.overlay} />
 
       <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarAnim }] }]}>
         <SafeAreaView edges={['left', 'right']} style={{ flex: 1 }}>

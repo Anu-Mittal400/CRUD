@@ -393,16 +393,6 @@ export default function Dashboard() {
                 email: user?.email,
               }}
             />
-
-            {/* Settings Panel Component */}
-            {/* <SettingsPanel
-              visible={true}
-              onClose={() =>  router.back()}
-              user={{
-                name: user?.user_metadata?.full_name || user?.name,
-                email: user?.email,
-              }}
-            /> */}
            </Pressable>
           </KeyboardAvoidingView>
         </SafeAreaView>

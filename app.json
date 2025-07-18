@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "crud",
+    "deepLinking": true,
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "android": {
@@ -17,7 +18,7 @@
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.rahul.sharma1999.CRUD"
+      "package": "com.anu.mittal.CRUD"
     },
     "web": {
       "bundler": "metro",
@@ -53,14 +54,16 @@
     },
     "extra": {
       "router": {},
-      "eas": {}
+      "eas": {
+        "projectId": "8cee03ad-9866-4869-960f-38c6b8d99ca2"
+      }
     },
     "ios": {
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "Allow this to recognize speech",
         "NSMicrophoneUsageDescription": "Allow this to access the mic"
       },
-      "bundleIdentifier": "com.rahul.sharma1999.CRUD"
+      "bundleIdentifier": "com.anu.mittal.CRUD"
     }
   }
 }
